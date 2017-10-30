@@ -1,3 +1,4 @@
+
 '''
 Question 2.0 Skeleton Code
 
@@ -15,6 +16,9 @@ def plot_means(train_data, train_labels):
     for i in range(0, 10):
         i_digits = data.get_digits_by_label(train_data, train_labels, i)
         # Compute mean of class i
+        # means = np.concatenate(means, )
+        means.append(np.mean(i_digits, axis=0).reshape(8,8))
+
 
     # Plot all means on same axis
     all_concat = np.concatenate(means, 1)
