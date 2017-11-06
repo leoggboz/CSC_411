@@ -21,13 +21,6 @@ class KNearestNeighbor(object):
         self.train_norm = (self.train_data**2).sum(axis=1).reshape(-1,1)
         self.train_labels = train_labels
 
-        # print(self.train_norm)
-        # print(self.train_norm.shape)
-        # print(self.train_data)
-        # print(self.train_data.shape)
-        # print(self.train_labels)
-        # print(self.train_labels.shape)
-
     def l2_distance(self, test_point):
         '''
         Compute L2 distance between test point and each training point
