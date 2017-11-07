@@ -22,28 +22,16 @@ def compute_parameters(train_data, train_labels):
     You should return a numpy array of shape (10, 64)
     where the ith row corresponds to the ith digit class.
     '''
-    etas = []
-    a, b = 2, 2
-    for i in range(10):
-        i_digits = data.get_digits_by_label(train_data, train_labels, i)
-        total = i_digits[0]
-        for j in range(1, i_digits.shape[0]):
-            total = np.add(total, i_digits[j])
-        eta = (total + a - 1) / (i_digits.shape[0] + a + b - 2)
-        etas.append(eta)
-    return np.array(etas)
+    eta = np.zeros((10, 64))
+    return eta
 
 def plot_images(class_images):
     '''
     Plot each of the images corresponding to each class side by side in grayscale
     '''
-    imgs = []
     for i in range(10):
         img_i = class_images[i]
-        imgs.append(img_i.reshape((8, 8)))
-    all_concat = np.concatenate(imgs, 1)
-    plt.imshow(all_concat, cmap='gray')
-    plt.show()
+        # ...
 
 def generate_new_data(eta):
     '''
@@ -52,16 +40,7 @@ def generate_new_data(eta):
 
     Plot these values
     '''
-    new_data = []
-    for i in range(10):
-        i_digit = []
-        for j in range(64):
-            if eta[i][j] > 0.5:
-                i_digit.append(1)
-            else:
-                i_digit.append(0)
-        new_data.append(i_digit)
-    generated_data = np.array(new_data)
+    generated_data = np.zeros((10, 64))
     plot_images(generated_data)
 
 def generative_likelihood(bin_digits, eta):
@@ -69,19 +48,9 @@ def generative_likelihood(bin_digits, eta):
     Compute the generative log-likelihood:
         log p(x|y, eta)
 
-    Should return an n x 10 numpy array
+    Should return an n x 10 numpy array 
     '''
-    generative_likelihood = []
-    for i in range(bin_digits.shape[0]):
-        i_digit = []
-        i_likelihood = 1
-        for d in range(eta.shape[0]):
-            for k in range(64):
-                curr_likeihood = np.multiply(np.power(eta[d][k],bin_digits[i][k]), np.power(1-eta[d][k],1-bin_digits[i][k]) )
-                i_likelihood = np.multiply(i_likelihood, curr_likeihood)
-            i_digit.append(i_likelihood)
-        generative_likelihood.append(i_digit)
-    return np.array(generative_likelihood)
+    return None
 
 def conditional_likelihood(bin_digits, eta):
     '''
@@ -92,9 +61,6 @@ def conditional_likelihood(bin_digits, eta):
     This should be a numpy array of shape (n, 10)
     Where n is the number of datapoints and 10 corresponds to each digit class
     '''
-    gen_likelihood = generative_likelihood(bin_digits, eta)
-
-
     return None
 
 def avg_conditional_likelihood(bin_digits, labels, eta):
@@ -108,11 +74,7 @@ def avg_conditional_likelihood(bin_digits, labels, eta):
     cond_likelihood = conditional_likelihood(bin_digits, eta)
 
     # Compute as described above and return
-    true_likeihood = []
-    for i in labels:
-        true_likeihood.append(cond_likelihood[int(i)])
-    true_likeihood = np.array(true_likeihood)
-    return np.means(true_likeihood, axis=0)
+    return None
 
 def classify_data(bin_digits, eta):
     '''
@@ -130,10 +92,9 @@ def main():
     eta = compute_parameters(train_data, train_labels)
 
     # Evaluation
-    # plot_images(eta)
-    # generate_new_data(eta)
-    print(generative_likelihood(train_data, eta))
+    plot_images(eta)
 
+    generate_new_data(eta)
 
 if __name__ == '__main__':
     main()

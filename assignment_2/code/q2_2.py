@@ -51,6 +51,10 @@ def compute_sigma_mles(train_data, train_labels):
         class_i_mean = np.tile(means[index],(covariances[index].shape[0],1))
         true_covariances[index] = np.matmul( np.subtract(covariances[index], class_i_mean).T, np.subtract(covariances[index], class_i_mean))
 
+    true_covariances = np.array(true_covariances)
+    #to ensure numerical stability
+    for i in range(true_covariances.shape[0]):
+        true_covariances[i][i] += 0.01
     return np.asarray(true_covariances)
 
 def plot_cov_diagonal(covariances):
@@ -94,12 +98,12 @@ def conditional_likelihood(digits, means, covariances):
     gen = generative_likelihood(digits, means, covariances)
     x = []
     for i in range(digits.shape[0]):
-        likelihood = []
+        evidence = []
         for j in range(10):
             denominator = ((2 * np.pi) ** (- digits.shape[1] / 2)) * ((np.linalg.det(covariances[j])) ** (-0.5))
             numerator = (digits[i] - means[j]).transpose().dot(np.linalg.inv(covariances[j])).dot((digits[i] - means[j]))
-            likelihood.append(np.log(denominator) + np.exp(np.log(numerator)))
-        x.append(np.array(likelihood))
+            evidence.append(np.log(denominator) + np.exp(np.log(numerator)))
+        x.append(np.array(evidence))
     return gen + np.log(1/10) - np.array(x)
 
 
@@ -111,10 +115,16 @@ def avg_conditional_likelihood(digits, labels, means, covariances):
 
     i.e. the average log likelihood that the model assigns to the correct class label
     '''
-    cond_likelihood = conditional_likelihood(digits, means, covariances)
-
     # Compute as described above and return
-    return np.mean(cond_likelihood, axis=0)
+    cond_likelihood = conditional_likelihood(digits, means, covariances)
+    true_likeihood = []
+    labels.astype(int)
+
+    for index in range(labels.shape[0]):
+        temp = int(labels[index])
+        true_likeihood.append(cond_likelihood[index][temp])
+    true_likeihood = np.asarray(true_likeihood)
+    return np.mean(true_likeihood, axis=0)
 
 def classify_data(digits, means, covariances):
     '''
@@ -132,6 +142,8 @@ def main():
     covariances = compute_sigma_mles(train_data, train_labels)
     # plot_cov_diagonal(covariances)
     # Evaluation
+    # print(np.exp(avg_conditional_likelihood(test_data,test_labels, means, covariances)))
+
     classify = classify_data(test_data, means, covariances)
     correct = 0
     for i in range(classify.shape[0]):
@@ -139,6 +151,14 @@ def main():
             correct += 1
     accuracy = correct / classify.shape[0]
     print("Test accuracy:", accuracy)
+
+    classify = classify_data(train_data, means, covariances)
+    correct = 0
+    for i in range(classify.shape[0]):
+        if classify[i] == train_labels[i]:
+            correct += 1
+    accuracy = correct / classify.shape[0]
+    print("Train accuracy:", accuracy)
 
 if __name__ == '__main__':
     main()
