@@ -76,10 +76,13 @@ def generative_likelihood(bin_digits, eta):
         i_digit = []
         i_likelihood = 1
         for d in range(eta.shape[0]):
+            digit_likeihoood = 0
             for k in range(64):
-                curr_likeihood = np.multiply(np.power(eta[d][k],bin_digits[i][k]), np.power(1-eta[d][k],1-bin_digits[i][k]) )
-                i_likelihood = np.multiply(i_likelihood, curr_likeihood)
-            i_digit.append(i_likelihood)
+                if bin_digits[i][k] == 1:
+                    digit_likeihoood += np.log(eta[d][k])
+                else:
+                    digit_likeihoood += np.log(1 - eta[d][k])
+            i_digit.append(digit_likeihoood)
         generative_likelihood.append(i_digit)
     return np.array(generative_likelihood)
 
@@ -93,9 +96,12 @@ def conditional_likelihood(bin_digits, eta):
     Where n is the number of datapoints and 10 corresponds to each digit class
     '''
     gen_likelihood = generative_likelihood(bin_digits, eta)
-
-
-    return None
+    print("gen_likelihood is ")
+    print(gen_likelihood)
+    evidence = np.exp(gen_likelihood.copy())
+    evidence = np.log(np.mean(evidence, axis = 1).reshape(evidence.shape[0],1))
+    evidence = np.tile(evidence, 10)
+    return gen_likelihood + np.log(0.1) - evidence
 
 def avg_conditional_likelihood(bin_digits, labels, eta):
     '''
@@ -106,13 +112,19 @@ def avg_conditional_likelihood(bin_digits, labels, eta):
     i.e. the average log likelihood that the model assigns to the correct class label
     '''
     cond_likelihood = conditional_likelihood(bin_digits, eta)
-
+    print("conditional likelihood is ")
+    print(cond_likelihood)
     # Compute as described above and return
     true_likeihood = []
-    for i in labels:
-        true_likeihood.append(cond_likelihood[int(i)])
-    true_likeihood = np.array(true_likeihood)
-    return np.means(true_likeihood, axis=0)
+    labels.astype(int)
+
+    for index in range(labels.shape[0]):
+        temp = int(labels[index])
+        true_likeihood.append(cond_likelihood[index][temp])
+    true_likeihood = np.asarray(true_likeihood)
+    print(true_likeihood)
+    print(true_likeihood.shape)
+    return np.mean(true_likeihood, axis=0)
 
 def classify_data(bin_digits, eta):
     '''
@@ -120,7 +132,7 @@ def classify_data(bin_digits, eta):
     '''
     cond_likelihood = conditional_likelihood(bin_digits, eta)
     # Compute and return the most likely class
-    pass
+    return np.argmax(cond_likelihood, axis=1)
 
 def main():
     train_data, train_labels, test_data, test_labels = data.load_all_data('data')
@@ -132,7 +144,25 @@ def main():
     # Evaluation
     # plot_images(eta)
     # generate_new_data(eta)
-    print(generative_likelihood(train_data, eta))
+    # print(np.exp(generative_likelihood(train_data, eta)))
+    # print(np.exp(conditional_likelihood(train_data,eta)))
+    # print(np.exp(avg_conditional_likelihood(train_data, train_labels, eta)))
+    # print(np.exp(avg_conditional_likelihood(test_data, test_labels, eta)))
+    classify = classify_data(test_data, eta)
+    correct = 0
+    for i in range(classify.shape[0]):
+        if classify[i] == test_labels[i]:
+            correct += 1
+    accuracy = correct / classify.shape[0]
+    print("Test accuracy:", accuracy)
+
+    classify = classify_data(train_data, eta)
+    correct = 0
+    for i in range(classify.shape[0]):
+        if classify[i] == train_labels[i]:
+            correct += 1
+    accuracy = correct / classify.shape[0]
+    print("Train accuracy:", accuracy)
 
 
 if __name__ == '__main__':
