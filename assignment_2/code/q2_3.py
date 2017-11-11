@@ -23,13 +23,12 @@ def compute_parameters(train_data, train_labels):
     where the ith row corresponds to the ith digit class.
     '''
     etas = []
-    a, b = 2, 2
     for i in range(10):
         i_digits = data.get_digits_by_label(train_data, train_labels, i)
         total = i_digits[0]
         for j in range(1, i_digits.shape[0]):
             total = np.add(total, i_digits[j])
-        eta = (total + a - 1) / (i_digits.shape[0] + a + b - 2)
+        eta = (total + 1) / (i_digits.shape[0] + 2)
         etas.append(eta)
     return np.array(etas)
 
@@ -96,8 +95,6 @@ def conditional_likelihood(bin_digits, eta):
     Where n is the number of datapoints and 10 corresponds to each digit class
     '''
     gen_likelihood = generative_likelihood(bin_digits, eta)
-    print("gen_likelihood is ")
-    print(gen_likelihood)
     evidence = np.exp(gen_likelihood.copy())
     evidence = np.log(np.mean(evidence, axis = 1).reshape(evidence.shape[0],1))
     evidence = np.tile(evidence, 10)
@@ -112,8 +109,6 @@ def avg_conditional_likelihood(bin_digits, labels, eta):
     i.e. the average log likelihood that the model assigns to the correct class label
     '''
     cond_likelihood = conditional_likelihood(bin_digits, eta)
-    print("conditional likelihood is ")
-    print(cond_likelihood)
     # Compute as described above and return
     true_likeihood = []
     labels.astype(int)
@@ -122,8 +117,6 @@ def avg_conditional_likelihood(bin_digits, labels, eta):
         temp = int(labels[index])
         true_likeihood.append(cond_likelihood[index][temp])
     true_likeihood = np.asarray(true_likeihood)
-    print(true_likeihood)
-    print(true_likeihood.shape)
     return np.mean(true_likeihood, axis=0)
 
 def classify_data(bin_digits, eta):
@@ -146,23 +139,25 @@ def main():
     # generate_new_data(eta)
     # print(np.exp(generative_likelihood(train_data, eta)))
     # print(np.exp(conditional_likelihood(train_data,eta)))
-    # print(np.exp(avg_conditional_likelihood(train_data, train_labels, eta)))
-    # print(np.exp(avg_conditional_likelihood(test_data, test_labels, eta)))
-    classify = classify_data(test_data, eta)
-    correct = 0
-    for i in range(classify.shape[0]):
-        if classify[i] == test_labels[i]:
-            correct += 1
-    accuracy = correct / classify.shape[0]
-    print("Test accuracy:", accuracy)
+    print("Average conditional likelihood over the true training class labels is %f" %avg_conditional_likelihood(train_data, train_labels, eta))
+    print("Average conditional likelihood over the true testing class labels is %f" %avg_conditional_likelihood(test_data, test_labels, eta))
 
-    classify = classify_data(train_data, eta)
-    correct = 0
-    for i in range(classify.shape[0]):
-        if classify[i] == train_labels[i]:
-            correct += 1
-    accuracy = correct / classify.shape[0]
-    print("Train accuracy:", accuracy)
+    #classifier accuracy
+    # classify = classify_data(test_data, eta)
+    # correct = 0
+    # for i in range(classify.shape[0]):
+    #     if classify[i] == test_labels[i]:
+    #         correct += 1
+    # accuracy = correct / classify.shape[0]
+    # print("Naive bayes classifier on testing set has an accuracy of %f." %accuracy)
+    #
+    # classify = classify_data(train_data, eta)
+    # correct = 0
+    # for i in range(classify.shape[0]):
+    #     if classify[i] == train_labels[i]:
+    #         correct += 1
+    # accuracy = correct / classify.shape[0]
+    # print("Naive bayes classifier on training set has an accuracy of %f." %accuracy)
 
 
 if __name__ == '__main__':

@@ -50,23 +50,24 @@ def compute_sigma_mles(train_data, train_labels):
     for index in range(len(covariances)):
         class_i_mean = np.tile(means[index],(covariances[index].shape[0],1))
         true_covariances[index] = np.matmul( np.subtract(covariances[index], class_i_mean).T, np.subtract(covariances[index], class_i_mean))
-
     true_covariances = np.array(true_covariances)
+
     #to ensure numerical stability
     for i in range(true_covariances.shape[0]):
         true_covariances[i][i] += 0.01
+
     return np.asarray(true_covariances)
 
 def plot_cov_diagonal(covariances):
     # Plot the diagonal of each covariance matrix side by side
     diags = []
     for i in range(10):
-        cov_diag = np.diag(covariances[i])
+        cov_diag = np.log(np.diag(covariances[i]))
         diags.append(cov_diag.reshape((8, 8)))
+    diags = np.asarray(diags)
     all_concat = np.concatenate(diags, 1)
     plt.imshow(all_concat, cmap='gray')
     plt.show()
-
 
 def generative_likelihood(digits, means, covariances):
     '''
@@ -140,25 +141,29 @@ def main():
     # Fit the model
     means = compute_mean_mles(train_data, train_labels)
     covariances = compute_sigma_mles(train_data, train_labels)
-    # plot_cov_diagonal(covariances)
+    plot_cov_diagonal(covariances)
+
     # Evaluation
-    # print(np.exp(avg_conditional_likelihood(test_data,test_labels, means, covariances)))
 
-    classify = classify_data(test_data, means, covariances)
-    correct = 0
-    for i in range(classify.shape[0]):
-        if classify[i] == test_labels[i]:
-            correct += 1
-    accuracy = correct / classify.shape[0]
-    print("Test accuracy:", accuracy)
+    # print("Average conditional likelihood over the true training class labels is %f" %avg_conditional_likelihood(train_data, train_labels, means, covariances))
+    # print("Average conditional likelihood over the true testing class labels is %f" %avg_conditional_likelihood(test_data, test_labels, means, covariances))
 
-    classify = classify_data(train_data, means, covariances)
-    correct = 0
-    for i in range(classify.shape[0]):
-        if classify[i] == train_labels[i]:
-            correct += 1
-    accuracy = correct / classify.shape[0]
-    print("Train accuracy:", accuracy)
+    # classify = classify_data(test_data, means, covariances)
+    # correct = 0
+    # for i in range(classify.shape[0]):
+    #     if classify[i] == test_labels[i]:
+    #         correct += 1
+    # accuracy = correct / classify.shape[0]
+    # print("Conditional Gaussian classifier on testing set has an accuracy of %f." %accuracy)
+    #
+    # classify = classify_data(train_data, means, covariances)
+    # correct = 0
+    # for i in range(classify.shape[0]):
+    #     if classify[i] == train_labels[i]:
+    #         correct += 1
+    # accuracy = correct / classify.shape[0]
+    # print("Conditional Gaussian classifier on training set has an accuracy of %f." %accuracy)
+
 
 if __name__ == '__main__':
     main()

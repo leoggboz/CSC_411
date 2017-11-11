@@ -49,14 +49,24 @@ class KNearestNeighbor(object):
         digit = []
         knn_distance = self.l2_distance(test_point)
         knn_first_k = np.sort(knn_distance,axis=None)
+        tie_flag = True
         for i in range(k):
             digit.append(self.train_labels[np.where( knn_distance == knn_first_k[i] )][0])
-        label = Counter(digit)
-        return label.most_common()[0][0]
+        tie_flag = True
+        while tie_flag:
+            label = Counter(digit)
+            if len(label.most_common(k)) >= 2:
+                if label.most_common(k)[0][1] == label.most_common(k)[1][1]:
+                    k -= 1
+                else:
+                    tie_flag = False
+            else:
+                tie_flag = False
+        return label.most_common(k)[0][0]
+
 
 def cross_validation(knn, k_range=np.arange(1,15)):
     for k in k_range:
-        print("Use %d NN" %k)
         X = np.array(knn.train_data)
         y = np.array(knn.train_labels)
         kf = KFold(n_splits=10)
@@ -66,7 +76,7 @@ def cross_validation(knn, k_range=np.arange(1,15)):
             temp_knn = KNearestNeighbor(X[train_index], y[train_index])
             kfold_accuracy += classification_accuracy(temp_knn,k,X[test_index],y[test_index])
         kfold_accuracy = kfold_accuracy/10
-        print(" accuracy is %f\n" %kfold_accuracy)
+        print("Using %d-NN classifier and the accuracy is %f\n" %(k,kfold_accuracy))
 
 def classification_accuracy(knn, k, eval_data, eval_labels):
     '''
@@ -77,15 +87,17 @@ def classification_accuracy(knn, k, eval_data, eval_labels):
     for i in range(eval_data.shape[0]):
         if( knn.query_knn(eval_data[i], k) == eval_labels[i] ):
             accuracy_k += 1
-
     return accuracy_k/eval_data.shape[0]
 
 def main():
     train_data, train_labels, test_data, test_labels = data.load_all_data('data')
     knn = KNearestNeighbor(train_data, train_labels)
     # Example usage:
-    # print(classification_accuracy(knn,1,test_data,test_labels))
-    # print(classification_accuracy(knn,15,test_data,test_labels))
+    print("For K = 1, the training set classification accuracy is %f" %classification_accuracy(knn,1,train_data,train_labels))
+    print("For K = 1, the testing set classification accuracy is %f" %classification_accuracy(knn,1,test_data,test_labels))
+    print("For K = 15, the training set classification accuracy is %f" %classification_accuracy(knn,15,train_data,train_labels))
+    print("For K = 15, the testing set classification accuracy is %f" %classification_accuracy(knn,15,test_data,test_labels))
+    print("Use 10 fold cross validation to find the opitmalK in the 1-15 range")
     cross_validation(knn)
 
 
