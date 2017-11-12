@@ -55,10 +55,7 @@ def generate_new_data(eta):
     for i in range(10):
         i_digit = []
         for j in range(64):
-            if eta[i][j] > 0.5:
-                i_digit.append(1)
-            else:
-                i_digit.append(0)
+            i_digit.append(np.random.binomial(1, eta[i][j]))
         new_data.append(i_digit)
     generated_data = np.array(new_data)
     plot_images(generated_data)
@@ -135,29 +132,29 @@ def main():
     eta = compute_parameters(train_data, train_labels)
 
     # Evaluation
-    # plot_images(eta)
-    # generate_new_data(eta)
-    # print(np.exp(generative_likelihood(train_data, eta)))
-    # print(np.exp(conditional_likelihood(train_data,eta)))
+    plot_images(eta)
+    generate_new_data(eta)
+    print(np.exp(generative_likelihood(train_data, eta)))
+    print(np.exp(conditional_likelihood(train_data,eta)))
     print("Average conditional likelihood over the true training class labels is %f" %avg_conditional_likelihood(train_data, train_labels, eta))
     print("Average conditional likelihood over the true testing class labels is %f" %avg_conditional_likelihood(test_data, test_labels, eta))
 
-    #classifier accuracy
-    # classify = classify_data(test_data, eta)
-    # correct = 0
-    # for i in range(classify.shape[0]):
-    #     if classify[i] == test_labels[i]:
-    #         correct += 1
-    # accuracy = correct / classify.shape[0]
-    # print("Naive bayes classifier on testing set has an accuracy of %f." %accuracy)
-    #
-    # classify = classify_data(train_data, eta)
-    # correct = 0
-    # for i in range(classify.shape[0]):
-    #     if classify[i] == train_labels[i]:
-    #         correct += 1
-    # accuracy = correct / classify.shape[0]
-    # print("Naive bayes classifier on training set has an accuracy of %f." %accuracy)
+    classifier accuracy
+    classify = classify_data(test_data, eta)
+    correct = 0
+    for i in range(classify.shape[0]):
+        if classify[i] == test_labels[i]:
+            correct += 1
+    accuracy = correct / classify.shape[0]
+    print("Naive bayes classifier on testing set has an accuracy of %f." %accuracy)
+
+    classify = classify_data(train_data, eta)
+    correct = 0
+    for i in range(classify.shape[0]):
+        if classify[i] == train_labels[i]:
+            correct += 1
+    accuracy = correct / classify.shape[0]
+    print("Naive bayes classifier on training set has an accuracy of %f." %accuracy)
 
 
 if __name__ == '__main__':
