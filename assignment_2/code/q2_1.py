@@ -100,6 +100,10 @@ def main():
     print("Use 10 fold cross validation to find the opitmalK in the 1-15 range")
     cross_validation(knn)
 
+    print("For K = 4, the training set classification accuracy is %f" %classification_accuracy(knn,4,train_data,train_labels))
+    print("For K = 4, the testing set classification accuracy is %f" %classification_accuracy(knn,4,test_data,test_labels))
+
+
 
 if __name__ == '__main__':
     main()

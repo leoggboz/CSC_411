@@ -37,28 +37,15 @@ def compute_sigma_mles(train_data, train_labels):
     Should return a three dimensional numpy array of shape (10, 64, 64)
     consisting of a covariance matrix for each digit class
     '''
-    covariances = [[]]*10
-    true_covariances = [[]]*10
+    covariances = np.zeros((10, 64, 64))
     means = compute_mean_mles(train_data, train_labels)
     # Compute covariances
-    for index, label in enumerate(train_labels):
-        ith = int(label)
-        data = train_data[index]
-        covariances[ith] = covariances[ith] + list([data])
-
-    covariances = np.asarray(covariances)
-    for index in range(len(covariances)):
-        class_i_mean = np.tile(means[index],(covariances[index].shape[0],1))
-        true_covariances[index] = np.matmul( np.subtract(covariances[index], class_i_mean).T, np.subtract(covariances[index], class_i_mean))
-
-    true_covariances = np.array(true_covariances)
-
-    #to ensure numerical stability
-    for i in true_covariances:
-        for j in range(i.shape[0]):
-            i[j][j] += 0.01
-
-    return np.asarray(true_covariances)
+    for i in range(10):
+        difference = train_data[train_labels==float(i)] - means[i]
+        difference_original  = difference.reshape(-1,64,1)
+        differnce_transpose = difference.reshape(-1,1,64)
+        covariances[i] = np.mean(np.multiply(difference_original, differnce_transpose), axis=0)
+    return covariances
 
 def plot_cov_diagonal(covariances):
     # Plot the diagonal of each covariance matrix side by side
@@ -78,16 +65,18 @@ def generative_likelihood(digits, means, covariances):
 
     Should return an n x 10 numpy array
     '''
-    gen = []
-    for i in range(digits.shape[0]):
-        likelihood = []
+    n = digits.shape[0]
+    d = digits.shape[1]
+    result = np.zeros((n, 10))
+    first_term = -0.5 * d * np.log(2 * np.pi)
+    for i in range(n):
         for j in range(10):
-            denominator = ((2 * np.pi) ** (- digits.shape[1] / 2)) * ((np.linalg.det(covariances[j])) ** (-0.5))
-            numerator = np.exp((-0.5) * (digits[i] - means[j]).transpose().dot(np.linalg.inv(covariances[j]))
-                            .dot((digits[i] - means[j])))
-            likelihood.append(np.log(denominator) + np.log(numerator))
-        gen.append(np.array(likelihood))
-    return np.array(gen)
+            new_covariance = covariances[j] + 0.01 * np.identity(64)
+            inverse = np.linalg.inv(new_covariance)
+            second_term = -0.5 * np.log(np.linalg.det(new_covariance))
+            third_term = -0.5 * np.matmul(np.matmul((digits[i]-means[j]), inverse), (digits[i]-means[j].T))
+            result[i,j] = first_term + second_term + third_term
+    return result
 
 def conditional_likelihood(digits, means, covariances):
     '''
@@ -99,15 +88,10 @@ def conditional_likelihood(digits, means, covariances):
     Where n is the number of datapoints and 10 corresponds to each digit class
     '''
     gen = generative_likelihood(digits, means, covariances)
-    x = []
-    for i in range(digits.shape[0]):
-        evidence = []
-        for j in range(10):
-            denominator = ((2 * np.pi) ** (- digits.shape[1] / 2)) * ((np.linalg.det(covariances[j])) ** (-0.5))
-            numerator = (digits[i] - means[j]).transpose().dot(np.linalg.inv(covariances[j])).dot((digits[i] - means[j]))
-            evidence.append(np.log(denominator) + np.exp(np.log(numerator)))
-        x.append(np.array(evidence))
-    return gen + np.log(1/10) - np.array(x)
+    evidence = np.exp(gen.copy()) * 0.1
+    evidence = np.log(np.sum(evidence, axis = 1).reshape(evidence.shape[0],1))
+    evidence = np.tile(evidence, 10)
+    return gen + np.log(0.1) - evidence
 
 
 def avg_conditional_likelihood(digits, labels, means, covariances):
@@ -143,28 +127,28 @@ def main():
     # Fit the model
     means = compute_mean_mles(train_data, train_labels)
     covariances = compute_sigma_mles(train_data, train_labels)
-    plot_cov_diagonal(covariances)
-
-    # Evaluation
-
-    print("Average conditional likelihood over the true training class labels is %f" %avg_conditional_likelihood(train_data, train_labels, means, covariances))
-    print("Average conditional likelihood over the true testing class labels is %f" %avg_conditional_likelihood(test_data, test_labels, means, covariances))
-
-    classify = classify_data(test_data, means, covariances)
-    correct = 0
-    for i in range(classify.shape[0]):
-        if classify[i] == test_labels[i]:
-            correct += 1
-    accuracy = correct / classify.shape[0]
-    print("Conditional Gaussian classifier on testing set has an accuracy of %f." %accuracy)
-
-    classify = classify_data(train_data, means, covariances)
-    correct = 0
-    for i in range(classify.shape[0]):
-        if classify[i] == train_labels[i]:
-            correct += 1
-    accuracy = correct / classify.shape[0]
-    print("Conditional Gaussian classifier on training set has an accuracy of %f." %accuracy)
+    # print(covariances)
+    print(conditional_likelihood(train_data, means, covariances))
+    # plot_cov_diagonal(covariances)
+    # # Evaluation
+    # print("Average conditional likelihood over the true training class labels is %f" %avg_conditional_likelihood(train_data, train_labels, means, covariances))
+    # print("Average conditional likelihood over the true testing class labels is %f" %avg_conditional_likelihood(test_data, test_labels, means, covariances))
+    #
+    # classify = classify_data(test_data, means, covariances)
+    # correct = 0
+    # for i in range(classify.shape[0]):
+    #     if classify[i] == test_labels[i]:
+    #         correct += 1
+    # accuracy = correct / classify.shape[0]
+    # print("Conditional Gaussian classifier on testing set has an accuracy of %f." %accuracy)
+    #
+    # classify = classify_data(train_data, means, covariances)
+    # correct = 0
+    # for i in range(classify.shape[0]):
+    #     if classify[i] == train_labels[i]:
+    #         correct += 1
+    # accuracy = correct / classify.shape[0]
+    # print("Conditional Gaussian classifier on training set has an accuracy of %f." %accuracy)
 
 
 if __name__ == '__main__':

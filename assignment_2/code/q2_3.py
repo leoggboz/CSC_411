@@ -134,8 +134,6 @@ def main():
     # Evaluation
     plot_images(eta)
     generate_new_data(eta)
-    print(np.exp(generative_likelihood(train_data, eta)))
-    print(np.exp(conditional_likelihood(train_data,eta)))
     print("Average conditional likelihood over the true training class labels is %f" %avg_conditional_likelihood(train_data, train_labels, eta))
     print("Average conditional likelihood over the true testing class labels is %f" %avg_conditional_likelihood(test_data, test_labels, eta))
 
