@@ -10,6 +10,13 @@ from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.naive_bayes import BernoulliNB
 
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import SGDClassifier
+from sklearn.neural_network import MLPClassifier
+
+from sklearn import svm
+
+
 def load_data():
     # import and filter data
     newsgroups_train = fetch_20newsgroups(subset='train',remove=('headers', 'footers', 'quotes'))
@@ -53,8 +60,92 @@ def bnb_baseline(bow_train, train_labels, bow_test, test_labels):
 
     return model
 
+def logisticReg(bow_train, train_labels, bow_test, test_labels):
+    # training the baseline model
+    binary_train = (bow_train>0).astype(int)
+    binary_test = (bow_test>0).astype(int)
+
+    model = LogisticRegression()
+    model.fit(binary_train, train_labels)
+
+    #evaluate the baseline model
+    train_pred = model.predict(binary_train)
+    print('LogisticRegression  train accuracy = {}'.format((train_pred == train_labels).mean()))
+    test_pred = model.predict(binary_test)
+    print('LogisticRegression  test accuracy = {}'.format((test_pred == test_labels).mean()))
+
+    # print(confusion_matrix(test_labels, test_pred))
+    return model
+
+# def SGradientDescentClassifier(bow_train, train_labels, bow_test, test_labels):
+#     # training the baseline model
+#     binary_train = (bow_train>0).astype(int)
+#     binary_test = (bow_test>0).astype(int)
+#
+#     model = SGDClassifier(alpha=0.0001, average=False, class_weight=None, epsilon=0.1,
+#        eta0=0.0, fit_intercept=True, l1_ratio=0.15,
+#        learning_rate='optimal', loss='hinge', max_iter=1000, n_iter=None,
+#        n_jobs=1, penalty='l2', power_t=0.5, random_state=None,
+#        shuffle=True, tol=1e-3, verbose=0, warm_start=False)
+#     model.fit(binary_train, train_labels)
+#
+#     #evaluate the baseline model
+#     train_pred = model.predict(binary_train)
+#     print('SGDClassifier train accuracy = {}'.format((train_pred == train_labels).mean()))
+#     test_pred = model.predict(binary_test)
+#     print('SGDClassifier test accuracy = {}'.format((test_pred == test_labels).mean()))
+#
+#     return model
+
+def SGradientDescentClassifier(bow_train, train_labels, bow_test, test_labels):
+    # training the baseline model
+    # binary_train = (bow_train>0).astype(int)
+    # binary_test = (bow_test>0).astype(int)
+
+    model = svm.SVC(decision_function_shape='ovo')
+    model.fit(bow_train, train_labels)
+
+    #evaluate the baseline model
+    train_pred = model.predict(bow_train)
+    print('svm train accuracy = {}'.format((train_pred == train_labels).mean()))
+    test_pred = model.predict(bow_test)
+    print('svm test accuracy = {}'.format((test_pred == test_labels).mean()))
+
+    return model
+
+
+def neuralNetwork(bow_train, train_labels, bow_test, test_labels):
+    # training the baseline model
+    # binary_train = (bow_train>0).astype(int)
+    # binary_test = (bow_test>0).astype(int)
+
+    model = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(15, 10), random_state=1)
+    model.fit(bow_train, train_labels)
+
+    #evaluate the baseline model
+    train_pred = model.predict(bow_train)
+    print('MLPClassifier train accuracy = {}'.format((train_pred == train_labels).mean()))
+    test_pred = model.predict(bow_test)
+    print('MLPClassifier test accuracy = {}'.format((test_pred == test_labels).mean()))
+
+    return model
+
+# def confusion_matrix(test_labels, test_pred):
+#     CM =  np.zeros((test_labels.shape[0],test_labels.shape[0]
+#     for i, index in enum(test_pred):
+
+
+
+
 if __name__ == '__main__':
     train_data, test_data = load_data()
     train_bow, test_bow, feature_names = bow_features(train_data, test_data)
+    # tf_idf_train, tf_idf_test, feature_names = tf_idf_features(train_data, test_data):
 
     bnb_model = bnb_baseline(train_bow, train_data.target, test_bow, test_data.target)
+
+    logisticReg(train_bow, train_data.target, test_bow, test_data.target)
+
+    # SGradientDescentClassifier(train_bow, train_data.target, test_bow, test_data.target)
+    #
+    # neuralNetwork(train_bow, train_data.target, test_bow, test_data.target)

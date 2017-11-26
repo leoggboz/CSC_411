@@ -146,5 +146,10 @@ def optimize_svm(train_data, train_targets, penalty, optimizer, batchsize, iters
     '''
     return None
 
+def main():
+    train_data, train_targets, test_data, test_targets = load_data()
+
+
+
 if __name__ == '__main__':
-    pass
+    main()
