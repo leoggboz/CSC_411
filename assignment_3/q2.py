@@ -57,7 +57,6 @@ class GDOptimizer(object):
         self.lr = lr
         self.beta = beta
         self.vel = 0.0
-        print(beta)
 
     def update_params(self, params, grad):
         # Update parameters using GD with momentum and return
@@ -71,9 +70,11 @@ class SVM(object):
     A Support Vector Machine
     '''
 
-    def __init__(self, c, feature_count):
+    def __init__(self, c, feature_count, bias):
         self.c = c
         self.w = np.random.normal(0.0, 0.1, feature_count)
+        self.bias = bias
+        self.feature_count = feature_count
 
     def hinge_loss(self, X, y):
         '''
@@ -82,7 +83,10 @@ class SVM(object):
         Returns a length-n vector containing the hinge-loss per data point.
         '''
         # Implement hinge loss
-        return None
+        h_loss=[]
+        for i in range(len(y)):
+            h_loss.append(max((1 - y[i] * (np.dot(self.w, X[i]) + self.bias)),0))
+        return np.array(h_loss)
 
     def grad(self, X, y):
         '''
@@ -92,7 +96,12 @@ class SVM(object):
         Returns the gradient with respect to the SVM parameters (shape (m,)).
         '''
         # Compute (sub-)gradient of SVM objective
-        return None
+        h_loss = self.hinge_loss(X,y)
+        sum_over = np.zeros(self.feature_count)
+        for i in range(len(y)):
+            if h_loss[i] > 0:
+                sum_over += X[i] * y[i]
+        return (self.w - sum_over)*(self.c / len(y))
 
     def classify(self, X):
         '''
@@ -101,7 +110,11 @@ class SVM(object):
         Returns the predicted class labels (shape (n,))
         '''
         # Classify points as +1 or -1
-        return None
+        classifies = []
+        for i in range(X.shape[0]):
+            sign = np.dot(self.w,X[i]) + self.bias
+            classifies.append(sign)
+        return np.sign(np.array(classifies))
 
 def load_data():
     '''
@@ -153,12 +166,22 @@ def optimize_svm(train_data, train_targets, penalty, optimizer, batchsize, iters
 
     SVM weights can be updated using the attribute 'w'. i.e. 'svm.w = updated_weights'
     '''
-    return None
+    batch_sampler = BatchSampler(train_data, train_targets, batchsize)
+    svm = SVM(penalty, train_data[0].shape[0], 1)
+    theta = 0
+    for  i in range(iters):
+        X_b, y_b = batch_sampler.get_batch()
+        theta = -0.05 * svm.grad(X_b, y_b) + 0.9 * theta
+        svm.w += theta
+    return svm
 
 def q2_1():
 
     # momentumGD_optimizer = GDOptimizer(1.0,0.8)
     # w_history = optimize_test_function(momentumGD_optimizer)
+    plt.plot(w_history)
+    plt.show()
+
     for i in range(4):
         momentumGD_optimizer = GDOptimizer(1.0,0.3*i)
         w_history = optimize_test_function(momentumGD_optimizer)
@@ -167,8 +190,17 @@ def q2_1():
 
 def q2_2():
     train_data, train_targets, test_data, test_targets = load_data()
-    batch_sampler = BatchSampler(train_data, train_targets, 100)
+    momentumGD_optimizer = GDOptimizer(1.0,0.9)
+    svm = optimize_svm(train_data, train_targets, 1, momentumGD_optimizer, 100, 500)
+
+    train_accuracy = svm.classify(train_data)
+    test_accuracy = svm.classify(test_data)
+    # print accuracy
+    print("The training set accuracy is:",(train_targets == train_accuracy).mean())
+    print("The test set accuracy is:", (test_targets == test_accuracy).mean())
+
 
 if __name__ == '__main__':
-    q2_1()
+    # q2_1()
+    q2_2()
     pass

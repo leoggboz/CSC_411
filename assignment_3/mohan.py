@@ -57,7 +57,6 @@ class GDOptimizer(object):
         self.lr = lr
         self.beta = beta
         self.vel = 0.0
-        print self.beta
 
     def update_params(self, params, grad):
         # Update parameters using GD with momentum and return
@@ -74,9 +73,10 @@ class SVM(object):
     A Support Vector Machine
     '''
 
-    def __init__(self, c, feature_count):
+    def __init__(self, c, feature_count, b = 0):
         self.c = c
         self.w = np.random.normal(0.0, 0.1, feature_count)
+        self.b = b
 
     def hinge_loss(self, X, y):
         '''
@@ -93,9 +93,11 @@ class SVM(object):
         h_loss=[]
 
         for i in range(len(y)):
-            a = 1 - y[i] * (np.dot(self.w, X[i]) +self.b)
+            temp = (np.dot(self.w, X[i]) +self.b)
+            a = 1 - y[i] * temp
             h_loss.append(max(a,0))
         return np.array(h_loss)
+
 
     def grad(self, X, y):
         '''
@@ -120,7 +122,7 @@ class SVM(object):
                 to_sum+= np.zeros(X.shape[1])
             else:
                 to_sum += -y[i]*X[i]
-                to_sum *= self.c / len(y)
+        to_sum *= self.c / len(y)
         return np.array(to_sum)
 
     def classify(self, X):
@@ -130,12 +132,23 @@ class SVM(object):
         Returns the predicted class labels (shape (n,))
         '''
         # Classify points as +1 or -1
+        # classifies = []
+        #
+        # for i in range(X.shape[0]):
+        #     sign = np.dot(self.w,X[i]) + self.b
+        #     classifies.append(sign)
+        # return np.sign(np.array(classifies))
         classifies = []
 
         for i in range(X.shape[0]):
-            sign = np.dot(self.w,X[i]) + self.b
+            sign  = np.dot(self.w,X[i]) + self.b
             classifies.append(sign)
         return np.sign(np.array(classifies))
+        # w_temp = np.tile(self.w,(X.shape[0],1))
+        # sign = np.matmul(w_temp.T,X)
+        # sign += self.b
+        # return np.sign(sign)
+
 
 def load_data():
     '''
@@ -176,6 +189,7 @@ def optimize_test_function(optimizer, w_init=10.0, steps=200):
 
     w = w_init
     w_history = [w_init]
+    delta = 0
 
     for _ in range(steps):
         # Optimize and update the history
@@ -193,7 +207,7 @@ def optimize_svm(train_data, train_targets, penalty, optimizer, batchsize, iters
 
 
 def q2_1(beta):
-    Optimizer = GDOptimizer(1.0,0.8)
+    Optimizer = GDOptimizer(1.0,beta)
     w_history = optimize_test_function(Optimizer)
     # now, plot.
     plt.plot(w_history)
@@ -213,34 +227,33 @@ def q2_2(train_data, train_targets, test_data, test_targets, c_value, m, alpha, 
     :param T: num of SGD iterations
     :return:
     '''
+
+
     svm = SVM(c_value, train_data[0].shape[0])
     optimizer = GDOptimizer(alpha, beta)
     delta = np.zeros(train_data.shape[1])
     delta_t_1 = np.zeros(train_data.shape[1])
-
     for i in range(T):
         delta_t_1 = -alpha * svm.grad(train_data, train_targets) + beta * delta_t_1
         svm.w = svm.w + delta_t_1
-        #now, svm.w shall be succesfully trained.
+    #now, svm.w shall be succesfully trained.
+    Train_classified = svm.classify(train_data)
+    Test_classified = svm.classify(test_data)
+    # print(classified)
+    print("when beta =",beta,":")
+    print("The classification accuracy on the training set is:",(train_targets==Train_classified).mean())
+    print("The classification accuracy on the test set is:", (test_targets == Test_classified).mean())
+    # w_to_plot = svm.w
+    # w_to_plot.resize(28,28)
+    # plt.imshow(w_to_plot,cmap='gray')
+    # plt.show()
 
-        Train_classified = svm.classify(train_data)
-        Test_classified = svm.classify(test_data)
 
-        # print(classified)
 
-        print("when beta =",beta,":")
-
-        print("The classification accuracy on the training set is:",(train_targets==Train_classified).mean())
-        print("The classification accuracy on the test set is:", (test_targets == Test_classified).mean())
-
-        w_to_plot = svm.w
-        w_to_plot.resize(28, 28)
-        plt.imshow(w_to_plot,cmap='gray')
-        plt.show()
 
 if __name__ == '__main__':
-    q2_1(0.0)
-    q2_1(0.9)
+    # q2_1(0.0)
+    # q2_1(0.9)
     train_data, train_targets, test_data, test_targets = load_data()
 
     # print("train_targets:",train_targets)
@@ -253,9 +266,9 @@ if __name__ == '__main__':
     m = 100
     T = 500
     alpha = 0.05
-    beta = 0
+    beta = 0.8
 
     q2_2(train_data, train_targets, test_data, test_targets, c_value, m, alpha, beta, T)
-    beta = 0.1
+    beta = 0.95
     q2_2(train_data, train_targets, test_data, test_targets, c_value, m, alpha, beta, T)
 pass
