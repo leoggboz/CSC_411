@@ -144,10 +144,6 @@ class SVM(object):
             sign  = np.dot(self.w,X[i]) + self.b
             classifies.append(sign)
         return np.sign(np.array(classifies))
-        # w_temp = np.tile(self.w,(X.shape[0],1))
-        # sign = np.matmul(w_temp.T,X)
-        # sign += self.b
-        # return np.sign(sign)
 
 
 def load_data():
@@ -243,10 +239,10 @@ def q2_2(train_data, train_targets, test_data, test_targets, c_value, m, alpha, 
     print("when beta =",beta,":")
     print("The classification accuracy on the training set is:",(train_targets==Train_classified).mean())
     print("The classification accuracy on the test set is:", (test_targets == Test_classified).mean())
-    # w_to_plot = svm.w
-    # w_to_plot.resize(28,28)
-    # plt.imshow(w_to_plot,cmap='gray')
-    # plt.show()
+    w_to_plot = svm.w
+    w_to_plot.resize(28,28)
+    plt.imshow(w_to_plot,cmap='gray')
+    plt.show()
 
 
 

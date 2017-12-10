@@ -160,7 +160,7 @@ def optimize_test_function(optimizer, w_init=10.0, steps=200):
         w_history.append(w)
     return w_history
 
-def optimize_svm(train_data, train_targets, penalty, optimizer, batchsize, iters):
+def optimize_svm(train_data, train_targets, penalty, optimizer, batchsize, iters, beta):
     '''
     Optimize the SVM with the given hyperparameters. Return the trained SVM.
 
@@ -171,36 +171,39 @@ def optimize_svm(train_data, train_targets, penalty, optimizer, batchsize, iters
     theta = 0
     for  i in range(iters):
         X_b, y_b = batch_sampler.get_batch()
-        theta = -0.05 * svm.grad(X_b, y_b) + 0.9 * theta
+        theta = -0.05 * svm.grad(X_b, y_b) + beta * theta
         svm.w += theta
     return svm
 
 def q2_1():
-
-    # momentumGD_optimizer = GDOptimizer(1.0,0.8)
-    # w_history = optimize_test_function(momentumGD_optimizer)
-    plt.plot(w_history)
+    t = list(range(0, 201))
+    w_history = []
+    for i in range(2):
+        momentumGD_optimizer = GDOptimizer(1.0,0.9*i)
+        w_history.append(optimize_test_function(momentumGD_optimizer))
+    plt.plot(t,w_history[0],'r')
+    plt.plot(t,w_history[1],'g')
     plt.show()
 
-    for i in range(4):
-        momentumGD_optimizer = GDOptimizer(1.0,0.3*i)
-        w_history = optimize_test_function(momentumGD_optimizer)
-        plt.plot(w_history)
-        plt.show()
-
-def q2_2():
+def q2_2(beta):
     train_data, train_targets, test_data, test_targets = load_data()
     momentumGD_optimizer = GDOptimizer(1.0,0.9)
-    svm = optimize_svm(train_data, train_targets, 1, momentumGD_optimizer, 100, 500)
+    # for i in range(2):
+    svm = optimize_svm(train_data, train_targets, 1, momentumGD_optimizer, 100, 500, beta)
 
     train_accuracy = svm.classify(train_data)
     test_accuracy = svm.classify(test_data)
     # print accuracy
     print("The training set accuracy is:",(train_targets == train_accuracy).mean())
     print("The test set accuracy is:", (test_targets == test_accuracy).mean())
+    print("The hinge loss of training set is :", (svm.hinge_loss(train_data,train_targets)).mean())
+    print("The hinge loss of test set is :", (svm.hinge_loss(test_data,test_targets)).mean())
+    plt.imshow(svm.w.reshape(28,28),cmap='gray')
+    plt.show()
 
 
 if __name__ == '__main__':
     # q2_1()
-    q2_2()
+    q2_2(0)
+    # q2_2(0.1)
     pass

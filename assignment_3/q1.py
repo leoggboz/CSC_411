@@ -13,6 +13,7 @@ from sklearn.naive_bayes import BernoulliNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.naive_bayes import GaussianNB
 
 
 def load_data():
@@ -63,14 +64,24 @@ def logisticReg(bow_train, train_labels, bow_test, test_labels):
     # binary_train = (bow_train>0).astype(int)
     # binary_test = (bow_test>0).astype(int)
 
-    model = LogisticRegression()
-    model.fit(bow_train, train_labels)
+    #grid search
+    tol_log = [1e-2,1e-3,1e-4]
+    pen_log = ['l1','l2'];
+    for i in tol_log:
+        for j in pen_log:
+            print("Tolenrance is %f, penalty is %s" %(i ,j))
+            model = LogisticRegression(tol = i,
+                                       penalty=j,
+                                       fit_intercept=True,
+                                       max_iter=200,
+                                       random_state=42,
+                                       )
 
-    train_pred = model.predict(bow_train)
-    print('LogisticRegression  train accuracy = {}'.format((train_pred == train_labels).mean()))
-    test_pred = model.predict(bow_test)
-    print('LogisticRegression  test accuracy = {}'.format((test_pred == test_labels).mean()))
-
+            model.fit(bow_train, train_labels)
+            train_pred = model.predict(bow_train)
+            print('LogisticRegression  train accuracy = {}'.format((train_pred == train_labels).mean()))
+            test_pred = model.predict(bow_test)
+            print('LogisticRegression  test accuracy = {}\n'.format((test_pred == test_labels).mean()))
     return model
 
 def SVMClassifier(bow_train, train_labels, bow_test, test_labels):
@@ -78,17 +89,22 @@ def SVMClassifier(bow_train, train_labels, bow_test, test_labels):
     # binary_train = (bow_train>0).astype(int)
     # binary_test = (bow_test>0).astype(int)
 
-    model = SGDClassifier(alpha=0.0001, average=False, class_weight=None, epsilon=0.1,
-       eta0=0.0, fit_intercept=True, l1_ratio=0.15,
-       learning_rate='optimal', loss='hinge', max_iter=1000, n_iter=None,
-       n_jobs=1, penalty='l2', power_t=0.5, random_state=None,
-       shuffle=True, tol=1e-3, verbose=0, warm_start=False)
-    model.fit(bow_train, train_labels)
+    alpah_svm = [0.0001, 0.001]
+    max_iter_svm = [500, 1000]
+    for i in alpah_svm:
+        for j in max_iter_svm:
+            print("alpah_svm is %f, max_iter_svm is %d" %(i ,j))
+            model = SGDClassifier(alpha=i, average=False, class_weight=None, epsilon=0.1,
+               eta0=0.0, fit_intercept=True, l1_ratio=0.15,
+               learning_rate='optimal', loss='hinge', max_iter=j, n_iter=None,
+               n_jobs=1, penalty='l2', power_t=0.5, random_state=None,
+               shuffle=True, tol=1e-3, verbose=0, warm_start=False)
+            model.fit(bow_train, train_labels)
 
-    train_pred = model.predict(bow_train)
-    print('SGDClassifier train accuracy = {}'.format((train_pred == train_labels).mean()))
-    test_pred = model.predict(bow_test)
-    print('SGDClassifier test accuracy = {}'.format((test_pred == test_labels).mean()))
+            train_pred = model.predict(bow_train)
+            print('SGDClassifier train accuracy = {}'.format((train_pred == train_labels).mean()))
+            test_pred = model.predict(bow_test)
+            print('SGDClassifier test accuracy = {}\n'.format((test_pred == test_labels).mean()))
 
     return model
 
@@ -97,37 +113,85 @@ def neuralNetwork(bow_train, train_labels, bow_test, test_labels):
     # binary_train = (bow_train>0).astype(int)
     # binary_test = (bow_test>0).astype(int)
 
-    model = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(15, 10), random_state=1)
+    # grid search
+    alpha_neural = [1e-5 , 1e-6, 1e-6]
+    hidden_neural = [(15,10),(10,2),(10,5)]
+    random_state_neural = [1,2,3,4]
+    for i in alpha_neural:
+        for j in hidden_neural:
+            for m in random_state_neural:
+                print("alpha is %f, hidden_layer is[%d,%d], random random_state is %d" %(i, j[0], j[1], m))
+                model = MLPClassifier(solver='lbfgs', alpha=i, hidden_layer_sizes=j, random_state=m)
+                model.fit(bow_train, train_labels)
+
+                train_pred = model.predict(bow_train)
+                print('Neural network train accuracy = {}'.format((train_pred == train_labels).mean()))
+                test_pred = model.predict(bow_test)
+                print('Neural network test accuracy = {}\n'.format((test_pred == test_labels).mean()))
+
+    return model
+
+def best_model(bow_train, train_labels, bow_test, test_labels):
+    # training the baseline model
+    # binary_train = (bow_train>0).astype(int)
+    # binary_test = (bow_test>0).astype(int)
+
+    model = LogisticRegression(tol = 1e-3,
+                               penalty='l1',
+                               fit_intercept=True,
+                               max_iter=200,
+                               random_state=42,
+                               )
+
     model.fit(bow_train, train_labels)
-
     train_pred = model.predict(bow_train)
-    print('MLPClassifier train accuracy = {}'.format((train_pred == train_labels).mean()))
+    print('LogisticRegression  train accuracy = {}'.format((train_pred == train_labels).mean()))
     test_pred = model.predict(bow_test)
-    print('MLPClassifier test accuracy = {}'.format((test_pred == test_labels).mean()))
-
+    print('LogisticRegression  test accuracy = {}\n'.format((test_pred == test_labels).mean()))
     return model
 
 def conf_matrix(test_labels, test_pred):
     CM =  np.zeros(((max(test_labels)+1),(max(test_labels))+1))
-
+    two_label = np.zeros(((max(test_labels)+1),(max(test_labels))+1))
     for i in range(test_pred.shape[0]):
         CM[test_labels[i]][test_pred[i]] += 1
-    return CM.astype(int)
+    for i in range(20):
+        for j in range(20):
+            two_label[i][j] = CM[i][j] + CM[j][i]
+
+    # return CM.astype(int), two_label.astype(int)
+    return CM, two_label
 
 
 if __name__ == '__main__':
     train_data, test_data = load_data()
     train_bow, test_bow, feature_names = bow_features(train_data, test_data)
-    tf_idf_train, tf_idf_test, feature_names = tf_idf_features(train_data, test_data)
+    # tf_idf_train, tf_idf_test, feature_names = tf_idf_features(train_data, test_data)
 
     # bnb_baseline(train_bow, train_data.target, test_bow, test_data.target)
 
-    model = logisticReg(train_bow, train_data.target, test_bow, test_data.target)
+    # logisticReg(train_bow, train_data.target, test_bow, test_data.target)
 
     # SVMClassifier(train_bow, train_data.target, test_bow, test_data.target)
-    #
+
     # neuralNetwork(train_bow, train_data.target, test_bow, test_data.target)
+
+    model = best_model(train_bow, train_data.target, test_bow, test_data.target)
 
     print("My best model is LogisticRegression and here is its confusion matrix")
     test_pred = model.predict(test_bow)
-    print(conf_matrix(test_data.target, test_pred))
+    cm, two_label = conf_matrix(test_data.target, test_pred)
+
+    mean_confusion = np.sum(cm, axis = 1)
+    for i in range(20):
+        cm[i] = cm[i] / mean_confusion[i]
+        two_label[i] = two_label[i] / mean_confusion[i]
+    print(cm)
+    print()
+    print(np.round(two_label, decimals = 2))
+    print("LogisticRegression are most confused about %s, %s." %(train_data.target_names[18], train_data.target_names[19]))
+
+
+
+    for i in range(20):
+        print(train_data.target_names[i])
